@@ -31,3 +31,6 @@ venv/
 
 # Local AI agent settings
 .claude/settings.local.json
+
+# Local AI agent runtime state (logs, pids, rate limits)
+.ntm/
