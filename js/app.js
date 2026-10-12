@@ -522,9 +522,7 @@
   var idleReportTimer = null;
   function scheduleIdleReportAutoSave() {
     if (idleReportTimer) clearTimeout(idleReportTimer);
-    idleReportTimer = setTimeout(function () {
-      if (state.gameHistory.length > 0) computeReportImageData(todayDateStr());
-    }, 60 * 60 * 1000);
+    idleReportTimer = setTimeout(saveTodaysReportToArchive, 60 * 60 * 1000);
   }
 
   function saveState() {
@@ -7748,10 +7746,13 @@
   // filter below to an exact calendar-date match instead, so a past
   // date can be reconstructed from history on demand - see
   // archiveImportedReportDates, the only current caller.
-  function computeDayReportData(dateStr, exactDate) {
+  // skipTs (optional): game timestamps to leave out - the ones another
+  // archived report already covers (see backfillReportArchive).
+  function computeDayReportData(dateStr, exactDate, skipTs) {
     var names = getAllKnownPlayerNames();
     var cutoffTs = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     function inRange(ts) {
+      if (skipTs && skipTs[ts]) return false;
       return exactDate ? localDateStrFromTs(ts) === dateStr : ts >= cutoffTs;
     }
     var liveTsSet = {};
@@ -8438,8 +8439,8 @@
   // buildDayReportImageBlob (the native PNG used when sharing straight
   // from the main app) - one pass over computeDayReportData, plain data
   // only, no HTML/canvas concerns here.
-  function computeReportImageData(dateStr, exactDate) {
-    var data = computeDayReportData(dateStr, exactDate);
+  function computeReportImageData(dateStr, exactDate, skipTs) {
+    var data = computeDayReportData(dateStr, exactDate, skipTs);
     var tokens = readReportThemeTokens();
 
     var longDate;
@@ -8527,7 +8528,10 @@
       players: players,
       highlights: highlights,
       games: games,
-      notes: dayNotesTextarea.value || null
+      notes: (exactDate && dateStr !== todayDateStr() ? getDayNotes(dateStr) : dayNotesTextarea.value) || null,
+      // every game's own time, so a later rebuild of a missed day (see
+      // backfillReportArchive) can tell which games this report already has
+      gameTs: data.games.map(function (g) { return g.ts; })
     };
     archiveDayReport(result);
     return result;
@@ -13133,6 +13137,9 @@
 
   function archiveDayReport(reportImageData) {
     if (noStatsMode) return;
+    // (a day with no games isn't worth a row - e.g. a save that ran with
+    // only old games left in the session's history)
+    if (!reportImageData.players || !reportImageData.players.length) return;
     var snapshot = {
       dateStr: reportImageData.dateStr,
       longDate: reportImageData.longDate,
@@ -13140,7 +13147,8 @@
       players: reportImageData.players,
       highlights: reportImageData.highlights,
       games: reportImageData.games,
-      notes: reportImageData.notes
+      notes: reportImageData.notes,
+      gameTs: reportImageData.gameTs || []
     };
     REPORT_ARCHIVE = REPORT_ARCHIVE.filter(function (entry) {
       return entry.dateStr !== snapshot.dateStr;
@@ -13215,7 +13223,87 @@
       return entry.dateStr !== dateStr;
     });
     saveReportArchiveToStorage(REPORT_ARCHIVE);
+    rememberDeletedArchiveDate(dateStr);
     renderReportArchiveList();
+  }
+
+  // A day only used to reach the archive when its colourful report was
+  // opened or shared, or when the app sat open and untouched for an hour
+  // after the last change (scheduleIdleReportAutoSave) - close the app or
+  // let the device sleep sooner, and that day was never archived. So every
+  // start (and every return to the app) rebuilds any recent day that has
+  // games but no report: exactly that calendar day, from the players' own
+  // game logs, leaving out games another report already has (a night
+  // session saved after midnight under the next day's date) - and never a
+  // day the user deleted on purpose.
+  var REPORT_ARCHIVE_DELETED_KEY = "poolMasterCounter.reportArchiveDeleted.v1";
+  var REPORT_BACKFILL_DAYS = 90;
+  function loadDeletedArchiveDates() {
+    try {
+      var parsed = JSON.parse(localStorage.getItem(REPORT_ARCHIVE_DELETED_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function rememberDeletedArchiveDate(dateStr) {
+    var dates = loadDeletedArchiveDates();
+    if (dates.indexOf(dateStr) !== -1) return;
+    dates.push(dateStr);
+    try {
+      localStorage.setItem(REPORT_ARCHIVE_DELETED_KEY, JSON.stringify(dates.slice(-400)));
+    } catch (e) {
+      console.warn("Could not remember a deleted report-archive date.", e);
+    }
+  }
+  // Game times other days' reports already have - today's automatic save
+  // (the last 24 hours) leaves those out, so last night's late games
+  // aren't counted again under today when play starts early the next day.
+  function gamesCoveredByOtherDays(dateStr) {
+    var covered = {};
+    REPORT_ARCHIVE.forEach(function (entry) {
+      if (entry.dateStr === dateStr) return;
+      (entry.gameTs || []).forEach(function (ts) { covered[ts] = true; });
+    });
+    return covered;
+  }
+  function saveTodaysReportToArchive() {
+    if (noStatsMode || state.gameHistory.length === 0) return;
+    var today = todayDateStr();
+    computeReportImageData(today, false, gamesCoveredByOtherDays(today));
+  }
+  function backfillReportArchive() {
+    if (noStatsMode) return 0;
+    var today = todayDateStr();
+    var oldest = localDateStrFromTs(Date.now() - REPORT_BACKFILL_DAYS * 24 * 60 * 60 * 1000);
+    var deleted = {};
+    loadDeletedArchiveDates().forEach(function (d) { deleted[d] = true; });
+    var covered = {};
+    REPORT_ARCHIVE.forEach(function (entry) {
+      (entry.gameTs || []).forEach(function (ts) { covered[ts] = true; });
+    });
+    var missing = {};
+    getAllKnownPlayerNames().forEach(function (name) {
+      allGamesForPlayerName(name).forEach(function (g) {
+        if (!g.ts || covered[g.ts]) return;
+        var d = localDateStrFromTs(g.ts);
+        if (d >= today || d < oldest || deleted[d] || findReportArchiveEntry(d)) return;
+        missing[d] = true;
+      });
+    });
+    var dates = Object.keys(missing).sort();
+    if (!dates.length) return 0;
+    var before = REPORT_ARCHIVE.length;
+    dates.forEach(function (d) {
+      computeReportImageData(d, true, covered);
+    });
+    REPORT_ARCHIVE.sort(function (a, b) { return a.dateStr < b.dateStr ? 1 : a.dateStr > b.dateStr ? -1 : 0; });
+    REPORT_ARCHIVE = REPORT_ARCHIVE.slice(0, REPORT_ARCHIVE_CAP);
+    saveReportArchiveToStorage(REPORT_ARCHIVE);
+    renderReportArchiveList();
+    var added = REPORT_ARCHIVE.length - before;
+    console.log("[Report Archive] rebuilt " + dates.length + " missed day(s): " + dates.join(", "));
+    return added;
   }
 
   // Re-attaches a fresh read of the CURRENT theme's colors to a saved
@@ -32740,6 +32828,17 @@
     }
     boot();
     consumePendingArchiveDates();
+    backfillReportArchive();
+    // Leaving the app (closing it, switching away, the device sleeping)
+    // keeps today's report too - no waiting for an idle hour - and
+    // coming back fills in any day missed meanwhile.
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") {
+        saveTodaysReportToArchive();
+      } else {
+        backfillReportArchive();
+      }
+    });
 
     // A join link (?join=1, from the Group Session QR/URL) puts this
     // device straight into guest mode - GAME_TYPES is already populated
