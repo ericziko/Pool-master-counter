@@ -86,7 +86,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   check("no sideways scroll at 390", w.doc <= w.win, w);
   await page.setViewport({ width: 1280, height: 900 });
   // Rotation / Single game beside Focus Mode
-  const modes = () => page.evaluate(() => ({ rotation: document.getElementById("scoreboard-mode-rotation").checked, single: document.getElementById("scoreboard-mode-single").checked, enabled: JSON.parse(localStorage.getItem("poolMasterCounter.state.v2")).rotation.enabled, besideFocus: document.getElementById("btn-toggle-focus").nextElementSibling.classList.contains("game-mode-toggle") && Math.abs(document.getElementById("btn-toggle-focus").getBoundingClientRect().right + 10 - document.querySelector(".game-mode-toggle").getBoundingClientRect().left) < 2 }));
+  const modes = () => page.evaluate(() => ({ rotation: document.getElementById("scoreboard-mode-rotation").checked, single: document.getElementById("scoreboard-mode-single").checked, enabled: JSON.parse(localStorage.getItem("poolMasterCounter.state.v2")).rotation.enabled, besideFocus: document.getElementById("btn-toggle-focus").nextElementSibling.classList.contains("game-mode-toggle") && (function () { var g = document.querySelector(".game-mode-toggle").getBoundingClientRect().left - document.getElementById("btn-toggle-focus").getBoundingClientRect().right; return g >= 0 && g <= 12; })() }));
   let m = await modes();
   check("Single game chosen to start, beside Focus Mode", m.single && !m.rotation && !m.enabled && m.besideFocus, m);
   await page.click("#scoreboard-mode-rotation");

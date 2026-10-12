@@ -17,7 +17,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="stylesheet" href="css/style.css?v=20261012b">
+<link rel="stylesheet" href="css/style.css?v=20261012c">
 <script>
   // Applied synchronously, before the stylesheet paints, so a saved theme
   // never flashes the default look first.
@@ -143,7 +143,7 @@
         <label><input type="radio" name="game-mode" value="individual" checked> <span data-i18n="gameSetup.individual">Individual</span></label>
         <label><input type="radio" name="game-mode" value="teams"> <span data-i18n="gameSetup.teams">Teams</span></label>
       </div>
-      <label class="checkbox-row" id="queue-mode-row">
+      <label class="checkbox-row checkbox-row-prominent queue-mode-prominent" id="queue-mode-row">
         <input type="checkbox" id="queue-mode-checkbox">
         <span data-i18n="players.queueModeEnable">🎱 Winner Stays (queue standby players)</span>
       </label>
@@ -292,6 +292,7 @@
           <label class="game-mode-option"><input type="radio" name="scoreboard-game-mode" id="scoreboard-mode-rotation" value="rotation"> <span data-i18n="scoreboard.modeRotation">🔄 Rotation</span></label>
           <label class="game-mode-option"><input type="radio" name="scoreboard-game-mode" id="scoreboard-mode-single" value="single" checked> <span data-i18n="scoreboard.modeSingleGame">🎱 Single game</span></label>
         </span>
+        <label class="scoreboard-queue-toggle hidden" id="scoreboard-queue-row"><input type="checkbox" id="scoreboard-queue-checkbox"> <span data-i18n="players.queueModeEnable">🎱 Winner Stays (queue standby players)</span></label>
       </span>
       <span class="voice-control-group">
         <button type="button" id="btn-toggle-keypad-speech" class="btn btn-ghost voice-toggle-btn hidden" data-i18n="keypad.speechToggleOn">🔊 Activate Voice</button>
@@ -2523,7 +2524,7 @@ Once those scheduled rounds wrap up, whoever has bagged the most match victories
 
 <div id="day-report-print-view" class="hidden"></div>
 
-<script src="js/app.js?v=20261012b"></script>
-<script src="js/camera-client.js?v=20261012b"></script>
+<script src="js/app.js?v=20261012c"></script>
+<script src="js/camera-client.js?v=20261012c"></script>
 </body>
 </html>

@@ -702,6 +702,9 @@
     var individualMode = !quickCounterMode && state.currentGame.mode === "individual";
     queueModeRow.classList.toggle("hidden", !individualMode);
     queueModeCheckbox.checked = state.currentGame.queueEnabled;
+    // (its copy at the top of the scoreboard, beside Rotation / Single game)
+    scoreboardQueueRow.classList.toggle("hidden", !individualMode);
+    scoreboardQueueCheckbox.checked = state.currentGame.queueEnabled;
     // Teams-only (the opposite condition from the queue row above) -
     // partners rotating game to game is what makes the team-average
     // Q-Score and per-player session win tracking below meaningful;
@@ -2146,6 +2149,8 @@
   var btnToggleFocus = document.getElementById("btn-toggle-focus");
   var scoreboardModeRotationRadio = document.getElementById("scoreboard-mode-rotation");
   var scoreboardModeSingleRadio = document.getElementById("scoreboard-mode-single");
+  var scoreboardQueueRow = document.getElementById("scoreboard-queue-row");
+  var scoreboardQueueCheckbox = document.getElementById("scoreboard-queue-checkbox");
   var btnToggleKeypadSpeech = document.getElementById("btn-toggle-keypad-speech");
   var btnKeypadSpeechHelp = document.getElementById("btn-keypad-speech-help");
   var keypadSpeechVoiceLabel = document.getElementById("keypad-speech-voice-label");
@@ -29503,6 +29508,13 @@
   // short a player just from checking the box. Turning it back off
   // leaves state.queue alone (harmless while unused) so the order is
   // remembered if it's re-enabled later.
+  // The scoreboard's copy of the checkbox (beside Rotation / Single game)
+  // is the same switch: it ticks this one and lets its handler do the rest.
+  scoreboardQueueCheckbox.addEventListener("change", function () {
+    if (queueModeCheckbox.checked === scoreboardQueueCheckbox.checked) return;
+    queueModeCheckbox.checked = scoreboardQueueCheckbox.checked;
+    queueModeCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+  });
   queueModeCheckbox.addEventListener("change", function () {
     state.currentGame.queueEnabled = queueModeCheckbox.checked;
     if (queueModeCheckbox.checked) {

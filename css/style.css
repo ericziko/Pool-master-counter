@@ -733,20 +733,76 @@ body > [id^="view-"] > * {
   margin: 4px 0 12px;
 }
 
-/* Focus Mode and, right beside it, Rotation / Single game (two radio
-   buttons in one pill, the chosen one lit) - kept together as one unit
-   where Focus Mode alone used to sit. */
-.focus-mode-group {
-  display: inline-flex;
-  flex-wrap: wrap;
+/* The controls along the top of the scoreboard - Focus Mode, Rotation /
+   Single game, Winner Stays, the voice button and its voice - one
+   centred row, every control the same height and centred on the same
+   line (wrapping onto more rows only when the screen is too narrow). */
+.voice-toggle-row {
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  margin: 4px auto 12px;
 }
 
-.focus-mode-group .focus-toggle-btn {
+.focus-mode-group {
+  display: contents;
+}
+
+.voice-toggle-row .focus-toggle-btn {
   margin: 0;
+}
+
+.voice-toggle-row .focus-toggle-btn,
+.voice-toggle-row .game-mode-toggle,
+.voice-toggle-row .scoreboard-queue-toggle,
+.voice-toggle-row .voice-toggle-btn,
+.voice-toggle-row select {
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.voice-toggle-row .voice-toggle-btn,
+.voice-toggle-row .focus-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+}
+
+.voice-toggle-row select {
+  height: 44px;
+  margin: 0;
+}
+
+/* Winner Stays' copy in that row - boxed like the pill beside it, lit
+   when on. */
+.scoreboard-queue-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.scoreboard-queue-toggle input {
+  width: 18px;
+  height: 18px;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.scoreboard-queue-toggle:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg-card));
+  color: var(--accent);
+}
+
+.scoreboard-queue-toggle.hidden {
+  display: none;
 }
 
 .game-mode-toggle {
@@ -1658,6 +1714,12 @@ input[type="number"] {
      (the rotation toggle) just fills its row same as before. */
   flex: 1;
   min-width: 140px;
+}
+
+/* Winner Stays in the Players section - bigger still. */
+.checkbox-row.checkbox-row-prominent.queue-mode-prominent {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
 }
 
 .checkbox-row.checkbox-row-prominent:has(input:checked) {
