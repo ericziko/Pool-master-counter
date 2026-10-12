@@ -74,7 +74,7 @@
   "backup.driveOpenFolder": "📁 Ouvrir le dossier",
   "backup.exportAll": "Toutes les données",
   "backup.exportAllHelpAria": "Qu'est-ce que « Toutes les données » exporte ?",
-  "backup.exportAllHelpText": "Couvre tout sur cet appareil, y compris les statistiques de carrière, les classements, les contacts et les listes enregistrées — en un seul fichier JSON.",
+  "backup.exportAllHelpText": "Couvre tout ce qui est sur cet appareil, dans un seul fichier JSON : statistiques de carrière, classements, contacts, listes enregistrées, les archives des rapports et les notes du jour, les rotations, ligues et tournois, les échantillons de la caméra, et les réglages de cet appareil (apparence, voix, configuration de la caméra). Les réglages ne s'appliquent que si le fichier est restauré avec Tout remplacer, ou sur un appareil sans joueurs. Les mots de passe et clés (Challonge, Google Drive) ne sont jamais inclus.",
   "backup.exportFilenamePrompt": "Nommez ce fichier de sauvegarde :",
   "backup.exportHeading": "⬆️ Exporter les parties",
   "backup.exportSessionHelpAria": "Que partage « Partager la dernière session » ?",

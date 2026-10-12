@@ -74,7 +74,7 @@
   "backup.driveOpenFolder": "📁 Buksan ang Folder",
   "backup.exportAll": "Lahat ng Data",
   "backup.exportAllHelpAria": "Ano ang ine-export ng All Data?",
-  "backup.exportAllHelpText": "Sakop ang lahat sa device na ito, kasama ang career stats, ratings, contacts, at naka-save na listahan — bilang isang JSON file.",
+  "backup.exportAllHelpText": "Kasama ang lahat ng nasa device na ito, sa iisang JSON file: career stats, ratings, contacts, mga naka-save na listahan, ang Report Archive at mga tala ng araw, mga rotation, liga at torneo, mga sample ng camera, at ang mga setting ng device na ito (itsura, boses, setup ng camera). Ang mga setting ay gagana lang kapag ni-restore ang file gamit ang Palitan Lahat, o sa device na wala pang manlalaro. Hindi kailanman kasama ang mga password at key (Challonge, Google Drive).",
   "backup.exportFilenamePrompt": "Pangalanan ang backup file na ito:",
   "backup.exportHeading": "⬆️ I-export ang mga Laro",
   "backup.exportSessionHelpAria": "Ano ang ibinabahagi ng Ibahagi ang Huling Session?",

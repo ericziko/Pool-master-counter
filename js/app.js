@@ -16418,11 +16418,15 @@
   // counter data" lives here - the run/best-run records ("balls in a
   // row"), saved rotations/setups, name translations, the removed/
   // graveyard lists, reset snapshots, the report archive, and both
-  // tournament stores, alongside the original seven fields. Deliberately
-  // NOT included: theme/language/focusMode/onboardingSeen and the other
-  // pure per-device UI preferences, plus the leaderboard cache (just a
-  // regenerable snapshot) - those aren't data a second manager's device
-  // should have forced onto it by importing someone else's backup.
+  // tournament stores, alongside the original seven fields - and, since
+  // the user asked for everything to travel, each player's best run of
+  // the day, the Report Archive's deliberately-deleted days, what was
+  // already sent to Challonge, and this device's own settings (see
+  // collectDeviceSettings - those only take effect on a full restore,
+  // never forced onto a second manager's device by a merge). Still left
+  // out: passwords and keys (Challonge, Google Drive) - backups get
+  // shared - plus the leaderboard cache (a regenerable snapshot) and
+  // one-off flags (onboarding seen, pending migrations).
   function buildBackupPayload() {
     return {
       exportedAt: new Date().toISOString(),
@@ -16444,6 +16448,11 @@
       mergedInto: PLAYER_MERGED_INTO,
       resetSnapshots: RESET_SNAPSHOTS,
       reportArchive: REPORT_ARCHIVE,
+      reportArchiveDeleted: loadDeletedArchiveDates(),
+      playerDailyBestRuns: PLAYER_DAILY_BEST_RUNS,
+      challongeDayPushes: CHALLONGE_DAY_PUSHES,
+      challongeRacePushes: loadChallongeRacePushes(),
+      settings: collectDeviceSettings(),
       tournament: TOURNAMENT,
       tournamentResults: TOURNAMENT_RESULTS,
       leagues: LEAGUES,
@@ -16458,6 +16467,66 @@
       // scratch.
       cameraEnrollments: loadCameraEnrollmentsFromStorage()
     };
+  }
+
+  // This device's own settings, as stored: the look (theme, language),
+  // Focus Mode, report and voice preferences, and the camera's whole setup
+  // (its settings, table calibration, empty-room snapshot, which camera).
+  // Exported with everything else; applied only where a backup is meant
+  // to become this device's own setup - a full Import & Replace, or a
+  // device with no players yet adopting a backup (applyDeviceSettings).
+  // (the storage names written out - several of their constants live in
+  // scopes this one can't see, e.g. CAMERA_SETTINGS_STORAGE_KEY inside boot())
+  function deviceSettingKeys() {
+    return ["poolMasterCounter.theme.v1", "poolMasterCounter.language.v1", "poolMasterCounter.focusMode", "poolMasterCounter.leagueFocusMode",
+      "poolMasterCounter.fargoEnabled.v1", "poolMasterCounter.queueSwapSticky.v1", "poolMasterCounter.dayReportFormat.v1",
+      "poolMasterCounter.dayReportAttachBackup.v1", "poolMasterCounter.dayReportAttachColorful.v1",
+      "poolMasterCounter.keypadSpeechEnabled.v1", "poolMasterCounter.keypadSpeechVoicePreset.v1",
+      "pmc-camera-settings", "pmc-camera-calibration", "pmc-camera-background-ref", "pmc-camera-empty-room",
+      "pmc-camera-selected-device", "pmc-camera-wizard-done"];
+  }
+  function collectDeviceSettings() {
+    var out = {};
+    deviceSettingKeys().forEach(function (key) {
+      try {
+        var v = localStorage.getItem(key);
+        if (v !== null) out[key] = v;
+      } catch (e) {}
+    });
+    return out;
+  }
+  function applyDeviceSettings(settings) {
+    if (!settings || typeof settings !== "object") return;
+    deviceSettingKeys().forEach(function (key) {
+      if (typeof settings[key] !== "string") return;
+      try {
+        localStorage.setItem(key, settings[key]);
+      } catch (e) {
+        console.warn("Could not restore the setting " + key + ".", e);
+      }
+    });
+  }
+  // Each player's best run of the day: the more recent day wins, then the
+  // higher run on the same day.
+  function mergePlayerDailyBestRuns(local, imported) {
+    var merged = {};
+    Object.keys(local || {}).forEach(function (key) { merged[key] = local[key]; });
+    Object.keys(imported || {}).forEach(function (key) {
+      var entry = imported[key];
+      if (!entry || !entry.name) return;
+      var existingKey = findKeyCaseInsensitive(merged, entry.name);
+      if (!existingKey) { merged[key] = entry; return; }
+      var mine = merged[existingKey], myDay = localDateStrFromTs(mine.ts), theirDay = localDateStrFromTs(entry.ts);
+      if (theirDay > myDay || (theirDay === myDay && entry.value > mine.value)) merged[existingKey] = entry;
+    });
+    return merged;
+  }
+  function saveDeletedArchiveDates(dates) {
+    try {
+      localStorage.setItem(REPORT_ARCHIVE_DELETED_KEY, JSON.stringify(dates.slice(-400)));
+    } catch (e) {
+      console.warn("Could not save the report archive's deleted days.", e);
+    }
   }
 
   // filename (optional): only the manual "Export All Data" button passes
@@ -17448,9 +17517,18 @@
             var mergedResetSnapshots = mergeArrayByKey(RESET_SNAPSHOTS, data.resetSnapshots, function (s) {
               return s.id;
             }, capAndSortByFieldDesc("ts", RESET_SNAPSHOTS_CAP));
+            // Days deleted from the archive on either device stay deleted.
+            var mergedDeletedDates = loadDeletedArchiveDates().concat(Array.isArray(data.reportArchiveDeleted) ? data.reportArchiveDeleted : []).filter(function (d, i, all) {
+              return typeof d === "string" && all.indexOf(d) === i;
+            });
             var mergedReportArchive = mergeArrayByKey(REPORT_ARCHIVE, data.reportArchive, function (r) {
               return r.dateStr;
-            }, capAndSortByFieldDesc("dateStr", REPORT_ARCHIVE_CAP));
+            }, capAndSortByFieldDesc("dateStr", REPORT_ARCHIVE_CAP)).filter(function (r) {
+              return mergedDeletedDates.indexOf(r.dateStr) === -1;
+            });
+            var mergedPlayerDailyBestRuns = mergePlayerDailyBestRuns(PLAYER_DAILY_BEST_RUNS, data.playerDailyBestRuns);
+            var mergedChallongeDayPushes = mergeMapPreferLocal(CHALLONGE_DAY_PUSHES, data.challongeDayPushes);
+            var mergedChallongeRacePushes = mergeMapPreferLocal(loadChallongeRacePushes(), data.challongeRacePushes);
             // Singleton, not a collection - keep whichever live/in-progress
             // tournament is actually local (don't clobber a bracket someone
             // is mid-match on with an unrelated one from the import); only
@@ -17549,9 +17627,16 @@
             localStorage.setItem(GRAVEYARD_PLAYERS_KEY, JSON.stringify(mergedGraveyardPlayers));
             localStorage.setItem(RESET_SNAPSHOTS_KEY, JSON.stringify(mergedResetSnapshots));
             localStorage.setItem(REPORT_ARCHIVE_KEY, JSON.stringify(mergedReportArchive));
+            saveDeletedArchiveDates(mergedDeletedDates);
+            savePlayerDailyBestRunsToStorage(mergedPlayerDailyBestRuns);
+            saveChallongeDayPushes(mergedChallongeDayPushes);
+            saveChallongeRacePushes(mergedChallongeRacePushes);
             if (mergedTournament) localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(mergedTournament));
             localStorage.setItem(TOURNAMENT_RESULTS_KEY, JSON.stringify(mergedTournamentResults));
             localStorage.setItem(LEAGUES_KEY, JSON.stringify(leagueMerge));
+            // A device with no players yet is adopting this backup as its
+            // own setup: its settings come with it (see collectDeviceSettings).
+            if (localIsFresh) applyDeviceSettings(data.settings);
 
             function finishImport() {
               if (data.exportedAt) {
@@ -17815,6 +17900,7 @@
       PLAYER_MERGED_INTO = {};
       RESET_SNAPSHOTS = [];
       REPORT_ARCHIVE = [];
+      PLAYER_DAILY_BEST_RUNS = {};
       TOURNAMENT = null;
       TOURNAMENT_RESULTS = [];
       LEAGUES = [];
@@ -17849,6 +17935,7 @@
       PLAYER_MERGED_INTO = data.mergedInto && typeof data.mergedInto === "object" ? data.mergedInto : {};
       RESET_SNAPSHOTS = Array.isArray(data.resetSnapshots) ? data.resetSnapshots : [];
       REPORT_ARCHIVE = Array.isArray(data.reportArchive) ? data.reportArchive : [];
+      PLAYER_DAILY_BEST_RUNS = data.playerDailyBestRuns && typeof data.playerDailyBestRuns === "object" ? data.playerDailyBestRuns : {};
       TOURNAMENT = data.tournament && typeof data.tournament === "object" ? data.tournament : null;
       TOURNAMENT_RESULTS = Array.isArray(data.tournamentResults) ? data.tournamentResults : [];
       LEAGUES = Array.isArray(data.leagues) ? data.leagues : [];
@@ -17883,6 +17970,17 @@
       localStorage.setItem(MERGED_INTO_KEY, JSON.stringify(PLAYER_MERGED_INTO));
       localStorage.setItem(RESET_SNAPSHOTS_KEY, JSON.stringify(RESET_SNAPSHOTS));
       localStorage.setItem(REPORT_ARCHIVE_KEY, JSON.stringify(REPORT_ARCHIVE));
+      localStorage.setItem(PLAYER_DAILY_BEST_RUNS_KEY, JSON.stringify(PLAYER_DAILY_BEST_RUNS));
+      // The archive's deleted days and the Challonge push records go with
+      // the game data they're about: the file's in a full replace, none
+      // when the game data is wiped (keep-players).
+      saveDeletedArchiveDates(keepPlayersOnly || !Array.isArray(data.reportArchiveDeleted) ? [] : data.reportArchiveDeleted);
+      if (!keepPlayersOnly) {
+        if (data.challongeDayPushes && typeof data.challongeDayPushes === "object") saveChallongeDayPushes(data.challongeDayPushes);
+        if (data.challongeRacePushes && typeof data.challongeRacePushes === "object") saveChallongeRacePushes(data.challongeRacePushes);
+        // A full replace makes the backup this device's own setup: its settings too.
+        applyDeviceSettings(data.settings);
+      }
       if (TOURNAMENT) localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(TOURNAMENT));
       else localStorage.removeItem(TOURNAMENT_KEY);
       localStorage.setItem(TOURNAMENT_RESULTS_KEY, JSON.stringify(TOURNAMENT_RESULTS));

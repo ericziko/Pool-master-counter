@@ -74,7 +74,7 @@
   "backup.driveOpenFolder": "📁 開啟資料夾",
   "backup.exportAll": "所有資料",
   "backup.exportAllHelpAria": "「所有資料」匯出啲乜嘢?",
-  "backup.exportAllHelpText": "呢部裝置上面嘅所有嘢都包晒，包括career stats、rating、聯絡人同已save嘅名單——全部變成一個JSON檔。",
+  "backup.exportAllHelpText": "包晒呢部機嘅所有資料，存做一個 JSON 檔：生涯數據、評分、聯絡人、儲存咗嘅名單、報告存檔同每日筆記、輪換、聯賽同錦標賽、鏡頭樣本，同埋呢部機嘅設定（外觀、聲音、鏡頭設定）。設定只會喺用「全部取代」還原，或者喺未有球員嘅機度先會生效。密碼同金鑰（Challonge、Google Drive）永遠唔會包括在內。",
   "backup.exportFilenamePrompt": "幫呢個備份檔案改個名：",
   "backup.exportHeading": "⬆️ 匯出對局",
   "backup.exportSessionHelpAria": "「分享上次場次」分享啲乜嘢?",
