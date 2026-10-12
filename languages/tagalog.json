@@ -1078,6 +1078,7 @@
   "resets.summary": "Bawat reset button sa app, sa isang lugar.",
   "resets.tournamentNote": "Ang pagtatapos lang ng isang tournament na kasalukuyang nilalaro (nang hindi ginagalaw ang live session) ay nasa Abandon Tournament button ng Tournament page.",
   "rotation.addToOrder": "+ Idagdag sa Pagkakasunud-sunod",
+  "rotation.chooseGameType": "Pumili ng uri ng laro…",
   "rotation.autoRotate": "Awtomatikong i-rotate ang uri ng laro",
   "rotation.heading": "Games Rotations",
   "rotation.loadRotation": "I-load ang Rotation",

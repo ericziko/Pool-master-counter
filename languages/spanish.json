@@ -1078,6 +1078,7 @@
   "resets.summary": "Todos los botones de reinicio de la app, en un solo lugar.",
   "resets.tournamentNote": "Para terminar solo un torneo en curso (sin afectar la sesión en vivo), usa el botón Abandonar Torneo en la página del Torneo.",
   "rotation.addToOrder": "+ Añadir al orden",
+  "rotation.chooseGameType": "Elige un tipo de partida…",
   "rotation.autoRotate": "Alternar tipos de partida automáticamente",
   "rotation.heading": "Rotaciones de partidas",
   "rotation.loadRotation": "Cargar rotación",

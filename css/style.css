@@ -733,6 +733,27 @@ body > [id^="view-"] > * {
   margin: 4px 0 12px;
 }
 
+/* Games Rotations' "+ Add to Order" once a game is picked (see
+   markRotationAddReady): the app's gold, glowing, so the next step can't
+   be missed. */
+#btn-rotation-add.rotation-add-ready {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 800;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent), 0 0 18px 2px color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: rotation-add-ready-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes rotation-add-ready-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent), 0 0 12px 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 45%, transparent), 0 0 26px 4px color-mix(in srgb, var(--accent) 70%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #btn-rotation-add.rotation-add-ready { animation: none; }
+}
+
 /* The controls along the top of the scoreboard - Focus Mode, Rotation /
    Single game, Winner Stays, the voice button and its voice - one
    centred row, every control the same height and centred on the same

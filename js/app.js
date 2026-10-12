@@ -3379,12 +3379,24 @@
   function populateGameTypeSelects() {
     [gameTypeSelect, rotationAddType, tournamentGameTypeSelect, wizardGameTypeSelect, wizardRotationAddType, gameSetupPreviewTypeSelect].forEach(function (select) {
       select.innerHTML = "";
+      // Games Rotations' picker starts on "Choose a game type..." rather
+      // than on the first game, so picking any game - 8-Ball included -
+      // is a real choice that lights up "+ Add to Order" (see
+      // markRotationAddReady).
+      if (select === rotationAddType) {
+        var prompt = document.createElement("option");
+        prompt.value = "";
+        prompt.disabled = true;
+        prompt.textContent = T("rotation.chooseGameType");
+        select.appendChild(prompt);
+      }
       GAME_TYPE_LIST.forEach(function (t) {
         var opt = document.createElement("option");
         opt.value = t.id;
         opt.textContent = t.label;
         select.appendChild(opt);
       });
+      if (select === rotationAddType) select.value = "";
     });
   }
 
@@ -31292,6 +31304,7 @@
     applyRotationIfDue();
     renderRotation();
     renderScoreboard();
+    guideToRotationLineup();
   });
 
   // A synced mirror of the toggle above, living in Current Game too (see
@@ -31304,6 +31317,7 @@
     applyRotationIfDue();
     renderRotation();
     renderScoreboard();
+    guideToRotationLineup();
   });
 
   // The scoreboard's own Rotation / Single game choice, beside Focus Mode
@@ -31318,10 +31332,7 @@
       applyRotationIfDue();
       renderRotation();
       renderScoreboard();
-      if (state.rotation.enabled && state.rotation.order.length < 2) {
-        showToast(T("scoreboard.rotationNeedsTypes"), "🔄");
-        expandAndScrollToPanel("rotation-panel", "btn-toggle-rotation-panel");
-      }
+      guideToRotationLineup();
     });
   });
 
@@ -31334,15 +31345,49 @@
 
   rotationAddType.addEventListener("change", function () {
     var type = GAME_TYPES[rotationAddType.value];
+    markRotationAddReady(!!type);
     if (!type) return;
     rotationAddTarget.value = type.defaultTarget;
     rotationAddUnit.value = type.unit;
   });
 
   btnRotationAdd.addEventListener("click", function () {
+    // Nothing chosen yet: straight to the list instead.
+    if (!GAME_TYPES[rotationAddType.value]) {
+      openRotationGamePicker();
+      return;
+    }
     var target = parseInt(rotationAddTarget.value, 10) || 1;
     addRotationItem(rotationAddType.value, target, rotationAddUnit.value);
+    rotationAddType.value = "";
+    markRotationAddReady(false);
+    // Still short of the two a rotation needs: the list again, for the next one.
+    if (state.rotation.enabled && state.rotation.order.length < 2) openRotationGamePicker();
   });
+
+  // "+ Add to Order" lights up - gold, glowing - once a game is picked,
+  // so the next step is unmissable; back to normal once it's added.
+  function markRotationAddReady(on) {
+    btnRotationAdd.classList.toggle("rotation-add-ready", !!on);
+  }
+  // Games Rotations' game list, focused and - where the browser lets a
+  // page do it (it needs the tap that led here, a few seconds old at
+  // most) - opened, ready to pick from.
+  function openRotationGamePicker(delayMs) {
+    setTimeout(function () {
+      try { rotationAddType.focus({ preventScroll: true }); } catch (e) { rotationAddType.focus(); }
+      try { if (typeof rotationAddType.showPicker === "function") rotationAddType.showPicker(); } catch (e) {}
+    }, delayMs || 0);
+  }
+  // Rotation switched on with fewer than two game types in its lineup:
+  // nothing to rotate yet - Games Rotations opens and scrolls into view
+  // with its game list open, to add them.
+  function guideToRotationLineup() {
+    if (!state.rotation.enabled || state.rotation.order.length >= 2) return;
+    showToast(T("scoreboard.rotationNeedsTypes"), "🔄");
+    expandAndScrollToPanel("rotation-panel", "btn-toggle-rotation-panel");
+    openRotationGamePicker(600);
+  }
 
   rotationEveryInput.addEventListener("input", function () {
     var v = parseInt(rotationEveryInput.value, 10);

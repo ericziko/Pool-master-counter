@@ -1078,6 +1078,7 @@
   "resets.summary": "App入面所有重設按鈕，全部集中喺呢度。",
   "resets.tournamentNote": "如果只想結束進行緊嘅錦標賽（唔影響即時場次），可以用「錦標賽」頁面入面嘅「放棄錦標賽」按鈕。",
   "rotation.addToOrder": "+ 加入順序",
+  "rotation.chooseGameType": "揀對局類型…",
   "rotation.autoRotate": "自動輪換對局類型",
   "rotation.heading": "對局輪換",
   "rotation.loadRotation": "載入輪換",

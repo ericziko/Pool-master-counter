@@ -1078,6 +1078,7 @@
   "resets.summary": "Tous les boutons de réinitialisation de l'application, au même endroit.",
   "resets.tournamentNote": "Pour terminer uniquement un tournoi en cours (sans toucher à la session en direct), utilisez le bouton Abandonner le tournoi sur la page Tournoi.",
   "rotation.addToOrder": "+ Ajouter à l'ordre",
+  "rotation.chooseGameType": "Choisir un type de partie…",
   "rotation.autoRotate": "Alterner automatiquement les types de partie",
   "rotation.heading": "Rotations des parties",
   "rotation.loadRotation": "Charger une rotation",
