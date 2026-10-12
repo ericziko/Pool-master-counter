@@ -2892,9 +2892,17 @@ input[type="number"] {
   white-space: nowrap;
 }
 
+/* "Tourney Victories: 2" - 24px on a wide card, smaller on a narrow
+   one (sized off the card's own width, like the name and score: the
+   card is a container-type:inline-size), so two cards side by side on a
+   phone don't push it past their edge; the ellipsis is only a backstop
+   for a much longer translation. */
 .stat-mini.stat-mini-tourney {
-  font-size: 24px;
+  font-size: clamp(12px, 8.5cqw, 24px);
   font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-mini strong {
