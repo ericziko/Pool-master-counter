@@ -7342,22 +7342,58 @@ body.network-guest-mode .header-nav-row #btn-open-group-session {
   display: inline;
 }
 
-/* The inline "change game type" control added for Quick Game (see
-   renderNowPlayingBanner) - sized/weighted to sit on the same line as
-   the rest of the banner instead of looking like a stray form control,
-   same idea as .racing-to-input/.rotation-position-every-input. */
-.now-playing-type-select {
+/* The Now Playing line's own controls - the game type, the target and
+   its unit (see renderNowPlayingBanner): the line's own big, bold accent
+   type, so the whole line reads as one sentence; a thin border and the
+   card background are all that say they can be changed. */
+.now-playing-banner .now-playing-control {
   display: inline-block;
-  margin-left: 8px;
+  margin: 0 0.15em;
   font: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 1em;
+  font-weight: inherit;
+  letter-spacing: inherit;
   color: var(--accent);
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 2px 6px;
-  vertical-align: middle;
+  border-radius: 8px;
+  padding: 0 0.25em;
+  line-height: 1.25;
+  vertical-align: baseline;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.now-playing-banner select.now-playing-control {
+  padding-right: 0.1em;
+  cursor: pointer;
+}
+
+.now-playing-banner select.now-playing-control option {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-card);
+}
+
+/* As wide as its digits (fitNowPlayingControls sets it; this until
+   then), no spinner arrows. */
+.now-playing-banner .now-playing-target-input {
+  width: calc(3ch + 0.8em);
+  text-align: center;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.now-playing-banner .now-playing-target-input::-webkit-outer-spin-button,
+.now-playing-banner .now-playing-target-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* While a Rotation decides the game, the same words as plain text. */
+.now-playing-banner .now-playing-value {
+  display: inline;
 }
 
 /* Duration and (while actually racing - see renderNowPlayingBanner)

@@ -5143,42 +5143,93 @@
   function renderNowPlayingBanner() {
     var type = GAME_TYPES[state.currentGame.gameType];
     nowPlayingBanner.innerHTML = "";
-    nowPlayingBanner.appendChild(document.createTextNode(T("scoreboard.nowPlayingBanner", { label: type.label })));
-    if (ROTATION_LABEL_NO_TARGET_TYPES.indexOf(state.currentGame.gameType) === -1) {
-      nowPlayingBanner.appendChild(document.createTextNode(" — "));
-      var note = document.createElement("span");
-      note.className = "target-note";
-      note.textContent = T("gameSetup.targetNote", { target: state.currentGame.target, unit: state.currentGame.unit });
-      nowPlayingBanner.appendChild(note);
-    }
-
-    // A quick way to change the game type right from the scoreboard,
-    // with no trip to the (collapsed) Game Setup panel - added for
-    // Quick Game, where there's no rotation lineup dictating the type
-    // automatically. Hidden whenever a Rotation IS running
-    // (applyRotationIfDue would just overwrite a manual pick back on
-    // the next win anyway, which would be confusing rather than useful
-    // there - the Games Rotation panel is the right place to manage
-    // game type in that case).
-    if (!state.rotation.enabled) {
-      var typeSelect = document.createElement("select");
-      typeSelect.className = "now-playing-type-select";
-      GAME_TYPE_LIST.forEach(function (t) {
-        var opt = document.createElement("option");
-        opt.value = t.id;
-        opt.textContent = t.label;
-        typeSelect.appendChild(opt);
-      });
-      typeSelect.value = state.currentGame.gameType;
-      typeSelect.setAttribute("aria-label", T("scoreboard.changeGameTypeAria"));
-      typeSelect.addEventListener("click", function (e) {
-        e.stopPropagation();
-      });
-      typeSelect.addEventListener("change", function () {
-        setCurrentGameType(typeSelect.value);
-      });
-      nowPlayingBanner.appendChild(typeSelect);
-    }
+    // One line, "Now playing [game] target [n] [unit]", every part in the
+    // banner's own big type - the game, the target and its unit editable
+    // right here, without a trip to the (collapsed) Game Setup panel.
+    // The words around them, and their order, come from the translation
+    // (markers split it, like the "Racing to" input below). Game types
+    // that are always one rack (ROTATION_LABEL_NO_TARGET_TYPES) show no
+    // target. While a Rotation is running the game and its target are
+    // the lineup's, so they're plain text there: applyRotationIfDue would
+    // just put a manual change back on the next win.
+    var editable = !state.rotation.enabled;
+    var hasTarget = ROTATION_LABEL_NO_TARGET_TYPES.indexOf(state.currentGame.gameType) === -1;
+    var M_TYPE = "\u0001", M_TARGET = "\u0002", M_UNIT = "\u0003";
+    var line = T(hasTarget ? "scoreboard.nowPlayingLine" : "scoreboard.nowPlayingLineNoTarget", { type: M_TYPE, target: M_TARGET, unit: M_UNIT });
+    var stopClick = function (el) {
+      el.addEventListener("click", function (e) { e.stopPropagation(); });
+      return el;
+    };
+    var plain = function (text) {
+      var span = document.createElement("span");
+      span.className = "now-playing-value";
+      span.textContent = text;
+      return span;
+    };
+    line.split(/([\u0001-\u0003])/).forEach(function (part) {
+      if (part === M_TYPE) {
+        if (!editable) { nowPlayingBanner.appendChild(plain(type.label)); return; }
+        var typeSelect = stopClick(document.createElement("select"));
+        typeSelect.className = "now-playing-type-select now-playing-control";
+        GAME_TYPE_LIST.forEach(function (t) {
+          var opt = document.createElement("option");
+          opt.value = t.id;
+          opt.textContent = t.label;
+          typeSelect.appendChild(opt);
+        });
+        typeSelect.value = state.currentGame.gameType;
+        typeSelect.setAttribute("aria-label", T("scoreboard.changeGameTypeAria"));
+        typeSelect.addEventListener("change", function () {
+          setCurrentGameType(typeSelect.value);
+        });
+        nowPlayingBanner.appendChild(typeSelect);
+      } else if (part === M_TARGET) {
+        if (!editable) { nowPlayingBanner.appendChild(plain(String(state.currentGame.target))); return; }
+        var targetInput = stopClick(document.createElement("input"));
+        targetInput.type = "number";
+        targetInput.min = "1";
+        targetInput.max = "500";
+        targetInput.inputMode = "numeric";
+        targetInput.className = "now-playing-target-input now-playing-control";
+        targetInput.value = state.currentGame.target;
+        targetInput.setAttribute("aria-label", T("gameSetup.target"));
+        targetInput.addEventListener("input", fitNowPlayingControls); // (a third digit fits while typing)
+        targetInput.addEventListener("change", function () {
+          var v = parseInt(targetInput.value, 10);
+          if (!v || v < 1) { targetInput.value = state.currentGame.target; return; }
+          state.currentGame.target = Math.min(500, v);
+          gameTargetInput.value = state.currentGame.target;
+          saveState();
+          renderScoreboard();
+          updateCurrentGameSummary();
+        });
+        nowPlayingBanner.appendChild(targetInput);
+      } else if (part === M_UNIT) {
+        if (!editable) { nowPlayingBanner.appendChild(plain(unitLabel(state.currentGame.unit))); return; }
+        var unitSelect = stopClick(document.createElement("select"));
+        unitSelect.className = "now-playing-unit-select now-playing-control";
+        ["rack", "balls", "points"].forEach(function (u) {
+          var opt = document.createElement("option");
+          opt.value = u;
+          opt.textContent = unitLabel(u);
+          unitSelect.appendChild(opt);
+        });
+        unitSelect.value = state.currentGame.unit;
+        unitSelect.setAttribute("aria-label", T("scoreboard.targetUnitAria"));
+        unitSelect.addEventListener("change", function () {
+          state.currentGame.unit = unitSelect.value;
+          gameTargetUnitSelect.value = state.currentGame.unit;
+          saveState();
+          renderScoreboard();
+          updateCurrentGameSummary();
+          tickShotCounter();
+        });
+        nowPlayingBanner.appendChild(unitSelect);
+      } else if (part) {
+        nowPlayingBanner.appendChild(document.createTextNode(part));
+      }
+    });
+    fitNowPlayingControls();
 
     var rotationInfo = rotationStatusInfo();
     if (rotationInfo) {
@@ -5248,6 +5299,29 @@
 
     nowPlayingBanner.appendChild(durationRow);
     updateGameDurationDisplay();
+  }
+
+  // Each control on the Now Playing line as wide as what it shows - a
+  // <select> is otherwise as wide as its longest option, which leaves a
+  // gap in the sentence ("Straight Pool       target"), and the target as
+  // wide as its digits. Measured in the line's own font.
+  function fitNowPlayingControls() {
+    var controls = nowPlayingBanner.querySelectorAll(".now-playing-control");
+    if (!controls.length) return;
+    var probe = document.createElement("span");
+    probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre;left:-9999px;top:0";
+    nowPlayingBanner.appendChild(probe);
+    Array.prototype.forEach.call(controls, function (el) {
+      var cs = getComputedStyle(el);
+      probe.style.font = cs.font;
+      probe.style.letterSpacing = cs.letterSpacing;
+      var text = el.tagName === "SELECT" ? (el.options[el.selectedIndex] ? el.options[el.selectedIndex].text : "") : String(el.value || "0");
+      probe.textContent = el.tagName === "SELECT" ? text : text.replace(/./g, "0");
+      var chrome = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+      var arrow = el.tagName === "SELECT" ? parseFloat(cs.fontSize) * 0.9 : parseFloat(cs.fontSize) * 0.15;
+      el.style.width = Math.ceil(probe.offsetWidth + chrome + arrow) + "px";
+    });
+    probe.remove();
   }
 
   function updateGameDurationDisplay() {
