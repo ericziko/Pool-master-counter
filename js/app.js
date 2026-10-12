@@ -2144,6 +2144,8 @@
   var btnExpandSameDeviceCamera = document.getElementById("btn-expand-same-device-camera");
 
   var btnToggleFocus = document.getElementById("btn-toggle-focus");
+  var scoreboardModeRotationRadio = document.getElementById("scoreboard-mode-rotation");
+  var scoreboardModeSingleRadio = document.getElementById("scoreboard-mode-single");
   var btnToggleKeypadSpeech = document.getElementById("btn-toggle-keypad-speech");
   var btnKeypadSpeechHelp = document.getElementById("btn-keypad-speech-help");
   var keypadSpeechVoiceLabel = document.getElementById("keypad-speech-voice-label");
@@ -3618,6 +3620,8 @@
   function renderRotation() {
     rotationEnabledCheckbox.checked = state.rotation.enabled;
     gameSetupRotationEnabledCheckbox.checked = state.rotation.enabled;
+    scoreboardModeRotationRadio.checked = state.rotation.enabled;
+    scoreboardModeSingleRadio.checked = !state.rotation.enabled;
     rotationEveryInput.value = state.rotation.every;
 
     renderRotationListInto(rotationList);
@@ -4045,6 +4049,7 @@
     var everyInput = document.createElement("input");
     everyInput.type = "number";
     everyInput.min = "1";
+    everyInput.max = "99";
     everyInput.inputMode = "numeric";
     everyInput.className = "rotation-position-every-input";
     everyInput.value = info.every;
@@ -4058,6 +4063,7 @@
         everyInput.value = state.rotation.every;
         return;
       }
+      v = Math.min(99, v);
       state.rotation.every = v;
       saveState();
       applyRotationIfDue();
@@ -5145,17 +5151,16 @@
     nowPlayingBanner.innerHTML = "";
     // One line, "Now playing [game] target [n] [unit]", every part in the
     // banner's own big type - the game, the target and its unit editable
-    // right here, without a trip to the (collapsed) Game Setup panel.
-    // The words around them, and their order, come from the translation
-    // (markers split it, like the "Racing to" input below). Game types
-    // that are always one rack (ROTATION_LABEL_NO_TARGET_TYPES) show no
-    // target. While a Rotation is running the game and its target are
-    // the lineup's, so they're plain text there: applyRotationIfDue would
-    // just put a manual change back on the next win.
-    var editable = !state.rotation.enabled;
-    var hasTarget = ROTATION_LABEL_NO_TARGET_TYPES.indexOf(state.currentGame.gameType) === -1;
+    // right here, without a trip to the (collapsed) Game Setup panel -
+    // the target too for one-rack games (8-Ball's 1 rack), so the line
+    // never loses it when the game changes. The words around them, and
+    // their order, come from the translation (markers split it, like the
+    // "Racing to" input below). While a Rotation is running the game and
+    // its target are the lineup's, so they're plain text there:
+    // applyRotationIfDue would just put a manual change back on the next win.
+    var editable = !rotationStatusInfo();
     var M_TYPE = "\u0001", M_TARGET = "\u0002", M_UNIT = "\u0003";
-    var line = T(hasTarget ? "scoreboard.nowPlayingLine" : "scoreboard.nowPlayingLineNoTarget", { type: M_TYPE, target: M_TARGET, unit: M_UNIT });
+    var line = T("scoreboard.nowPlayingLine", { type: M_TYPE, target: M_TARGET, unit: M_UNIT });
     var stopClick = function (el) {
       el.addEventListener("click", function (e) { e.stopPropagation(); });
       return el;
@@ -31287,6 +31292,25 @@
     applyRotationIfDue();
     renderRotation();
     renderScoreboard();
+  });
+
+  // The scoreboard's own Rotation / Single game choice, beside Focus Mode
+  // - the same switch as the two checkboxes above (renderRotation keeps
+  // all of them in step). Rotation with fewer than two game types in the
+  // lineup has nothing to rotate: Games Rotations opens to add them.
+  [scoreboardModeRotationRadio, scoreboardModeSingleRadio].forEach(function (radio) {
+    radio.addEventListener("change", function () {
+      if (!radio.checked) return;
+      state.rotation.enabled = radio === scoreboardModeRotationRadio;
+      saveState();
+      applyRotationIfDue();
+      renderRotation();
+      renderScoreboard();
+      if (state.rotation.enabled && state.rotation.order.length < 2) {
+        showToast(T("scoreboard.rotationNeedsTypes"), "🔄");
+        expandAndScrollToPanel("rotation-panel", "btn-toggle-rotation-panel");
+      }
+    });
   });
 
   btnRotationPositionPrev.addEventListener("click", function () {

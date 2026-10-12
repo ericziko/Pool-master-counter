@@ -1,5 +1,7 @@
 // The scoreboard's Now Playing line: "Now playing [game] target [n] [unit]", the controls in the
-// line's own big accent type, kept in step with Game Setup both ways; plain text while a Rotation runs.
+// line's own big accent type, kept in step with Game Setup both ways, the target there for every
+// game; plain text while a Rotation runs. The Rotation / Single game radios beside Focus Mode, and
+// the rotation line's size and its two-digit "every" box.
 // usage: node tests/probe_now_playing.js http://localhost:4235/ <screenshot dir>
 const puppeteer = require("puppeteer-core");
 const EXE = "/Users/lucmartin/.cache/puppeteer/chrome/mac_arm-154.0.8037.57/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing";
@@ -69,11 +71,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await page.evaluate(() => { const i = document.querySelector("#now-playing-banner .now-playing-target-input"); i.value = "0"; i.dispatchEvent(new Event("change", { bubbles: true })); });
   await sleep(300);
   check("0 isn't taken: back to 120", (await setup()).saved.target === 120 && /target \[120\]/.test(await line()), await line());
-  // a one-rack game: no target
+  // a one-rack game: its target (1 rack) stays on the line
   await page.select("#now-playing-banner select.now-playing-type-select", "8ball");
   await sleep(400);
   t = await line();
-  check("8 Ball: just Now playing [game]", /^🎱 Now playing \[8-Ball v\]$/.test(t), t);
+  check("8-Ball: the target stays - Now playing [8-Ball] target [1] [rack]", /^🎱 Now playing \[8-Ball v\] target \[1\] \[rack v\]$/.test(t), t);
   // phone width
   await page.select("#now-playing-banner select.now-playing-type-select", "straight");
   await sleep(300);
@@ -83,15 +85,40 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const w = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, win: innerWidth }));
   check("no sideways scroll at 390", w.doc <= w.win, w);
   await page.setViewport({ width: 1280, height: 900 });
-  // a Rotation running: plain text
-  await page.evaluate(() => { const r = document.getElementById("rotation-enabled"); if (!r.checked) r.click(); });
-  await sleep(600);
+  // Rotation / Single game beside Focus Mode
+  const modes = () => page.evaluate(() => ({ rotation: document.getElementById("scoreboard-mode-rotation").checked, single: document.getElementById("scoreboard-mode-single").checked, enabled: JSON.parse(localStorage.getItem("poolMasterCounter.state.v2")).rotation.enabled, besideFocus: document.getElementById("btn-toggle-focus").nextElementSibling.classList.contains("game-mode-toggle") && Math.abs(document.getElementById("btn-toggle-focus").getBoundingClientRect().right + 10 - document.querySelector(".game-mode-toggle").getBoundingClientRect().left) < 2 }));
+  let m = await modes();
+  check("Single game chosen to start, beside Focus Mode", m.single && !m.rotation && !m.enabled && m.besideFocus, m);
+  await page.click("#scoreboard-mode-rotation");
+  await sleep(700);
+  m = await modes();
+  const toast = await page.evaluate(() => document.body.innerText.includes("Add at least two game types to the rotation first."));
+  const rotPanelOpen = await page.evaluate(() => !document.getElementById("rotation-panel").classList.contains("collapsed"));
+  check("Rotation with no lineup: on, says to add game types, opens Games Rotations", m.rotation && m.enabled && toast && rotPanelOpen, { m, toast, rotPanelOpen });
+  check("...nothing rotating yet: the line stays editable", /^🎱 Now playing \[[^\]]+ v\] target \[\d+\] \[[a-z]+ v\]$/.test(await line()), await line());
+  // a lineup: 8-Ball and Straight Pool
+  await page.evaluate(() => {
+    const add = (type) => { const s = document.getElementById("rotation-add-type"); s.value = type; s.dispatchEvent(new Event("change", { bubbles: true })); document.getElementById("btn-rotation-add").click(); };
+    add("8ball"); add("straight");
+    const e = document.getElementById("rotation-every"); e.value = "3"; e.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await sleep(700);
   t = await line();
   const controls = await page.evaluate(() => document.querySelectorAll("#now-playing-banner .now-playing-control").length);
   console.log("rotation line:", t);
-  check("Rotation on: no controls on the line, the same words as text", controls === 0 && /^🎱 Now playing \{[^}]+\}/.test(t), { controls, t });
-  await page.evaluate(() => { const r = document.getElementById("rotation-enabled"); if (r.checked) r.click(); });
+  check("Rotation running: the same words as text, target included", controls === 0 && /^🎱 Now playing \{8-Ball\} target \{1\} \{rack\}/.test(t), { controls, t });
+  const rot = await page.evaluate(() => { const el = document.getElementById("rotation-position-text"), i = el.querySelector("input"); return { text: el.textContent + "[" + (i && i.value) + "]", size: getComputedStyle(el).fontSize, inputW: i ? Math.round(i.getBoundingClientRect().width) : null, max: i && i.max }; });
+  check("the rotation line is big (1.5rem) and its box two digits wide", rot.size === "24px" && rot.inputW > 20 && rot.inputW < 60 && rot.max === "99", rot);
+  if (OUT) { const el = await page.$("#rotation-position-row"); await el.screenshot({ path: OUT + "/rotation_line.png" }); const bar = await page.$(".voice-toggle-row"); await bar.screenshot({ path: OUT + "/mode_toggle.png" }); }
+  await page.evaluate(() => { const i = document.querySelector("#rotation-position-text input"); i.value = "250"; i.dispatchEvent(new Event("change", { bubbles: true })); });
   await sleep(400);
+  check("a 3-digit 'every' is held to 99", (await page.evaluate(() => JSON.parse(localStorage.getItem("poolMasterCounter.state.v2")).rotation.every)) === 99);
+  // back to a single game: editable, target still there
+  await page.click("#scoreboard-mode-single");
+  await sleep(600);
+  m = await modes();
+  t = await line();
+  check("Single game again: rotation off, the target still on the line, editable", m.single && !m.enabled && /^🎱 Now playing \[[^\]]+ v\] target \[\d+\] \[[a-z]+ v\]$/.test(t) && (await page.evaluate(() => document.getElementById("rotation-enabled").checked)) === false, { m, t });
   // French
   await page.evaluate(() => { localStorage.setItem("poolMasterCounter.language", "fr"); });
   check("no page errors", errors.length === 0, errors);
