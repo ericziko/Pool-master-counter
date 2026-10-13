@@ -7610,8 +7610,14 @@ body.network-guest-mode #header-group-start {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   max-width: 100%;
+  /* all of them together, in one outer frame round the groups */
+  padding: 8px 6px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-panel) 35%, transparent);
+  box-sizing: border-box;
 }
 
 .header-nav-line {
@@ -7627,7 +7633,7 @@ body.network-guest-mode #header-group-start {
    line share one line on a laptop screen) */
 .header-nav-group .all-players-nav-btn {
   font-size: 0.8rem;
-  padding: 6px 10px;
+  padding: 6px 9px;
 }
 
 .header-nav-group .quick-game-btn {
