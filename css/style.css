@@ -6690,7 +6690,8 @@ body.network-guest-mode .header-nav-row #btn-open-camera-wizard-header,
 body.network-guest-mode .header-nav-row #btn-open-tournament,
 body.network-guest-mode .header-nav-row #btn-open-global-stats,
 body.network-guest-mode .header-nav-row #btn-open-contact-sheet,
-body.network-guest-mode .header-nav-row #btn-open-group-session {
+body.network-guest-mode .header-nav-row #btn-open-group-session,
+body.network-guest-mode #header-group-start {
   display: none !important;
 }
 
@@ -7600,11 +7601,56 @@ body.network-guest-mode .header-nav-row #btn-open-group-session {
 
 /* ---------- Header nav row ---------- */
 
+/* The header's buttons in bordered groups - start a game (Quick Game,
+   Welcome New Player, Game Setup Wizard, camera), events (Tournament,
+   League, Multi Tables), stats (Leaderboard, Global Stats) on one line;
+   Contact Sheet and Help, then Theme and Language, on the line below -
+   each line wrapping onto more only when the screen is too narrow. */
 .header-nav-row {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 10px;
+  max-width: 100%;
+}
+
+.header-nav-line {
+  display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+/* (a little tighter than other buttons, so the three groups of the first
+   line share one line on a laptop screen) */
+.header-nav-group .all-players-nav-btn {
+  font-size: 0.8rem;
+  padding: 6px 10px;
+}
+
+.header-nav-group .quick-game-btn {
+  font-size: 1rem;
+  padding: 8px 14px;
+}
+
+.header-nav-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-panel) 60%, transparent);
+  max-width: 100%;
+}
+
+/* (a group whose buttons are all hidden - e.g. on a guest's device - goes too) */
+.header-nav-group:not(:has(> .btn:not(.hidden))) {
+  display: none;
 }
 
 /* ---------- Elimination Tournament ---------- */
