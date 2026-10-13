@@ -70,7 +70,6 @@
           <button type="button" id="btn-quick-game" class="btn btn-primary all-players-nav-btn quick-game-btn" data-i18n="header.quickGame">⚡ Quick Game</button>
           <button type="button" id="btn-test-onboarding" class="btn btn-primary all-players-nav-btn" data-i18n="header.welcomeNewPlayer">👋 Welcome New Player</button>
           <button type="button" id="btn-open-wizard" class="btn btn-primary all-players-nav-btn" data-i18n="header.startWizard">🧙 Game Setup Wizard</button>
-          <button type="button" id="btn-open-camera-wizard-header" class="btn btn-ghost all-players-nav-btn" data-i18n="cameraWizard.openButton">📷 Set Up Camera</button>
         </div>
         <div class="header-nav-group" id="header-group-events">
           <button type="button" id="btn-open-tournament" class="btn btn-ghost all-players-nav-btn" data-i18n="header.tournament">🏆 Tournament</button>
@@ -85,6 +84,7 @@
       <div class="header-nav-line">
         <div class="header-nav-group" id="header-group-people">
           <button type="button" id="btn-open-contact-sheet" class="btn btn-ghost all-players-nav-btn" data-i18n="header.contactSheet">📇 Contact Sheet</button>
+          <button type="button" id="btn-open-camera-wizard-header" class="btn btn-ghost all-players-nav-btn" data-i18n="cameraWizard.openButton">📷 Set Up Camera</button>
           <button type="button" id="btn-open-help" class="btn btn-ghost all-players-nav-btn" data-i18n="header.help">❓ Help</button>
         </div>
       <div class="theme-select-row">
@@ -1047,7 +1047,7 @@
 <div id="multi-table-host-overlay" class="confirm-modal-overlay hidden">
   <div class="confirm-modal-card">
     <p class="confirm-modal-message" data-i18n="multiTable.promptTitle">🖥️ Host Multiple Tables</p>
-    <p class="player-stats-note" id="multi-table-host-body" data-i18n="multiTable.promptBody">Each table needs its own device connected to the same local server. Open Group Session to connect this device as the host, or download the app if this page can't host directly.</p>
+    <p class="player-stats-note" id="multi-table-host-body" data-i18n="multiTable.promptBody">Each table needs its own device connected to the same local server. Open Multi Tables to connect this device as the host, or download the app if this page can't host directly.</p>
     <p class="player-stats-note hidden" id="multi-table-host-link-note"></p>
     <div class="confirm-modal-actions">
       <!-- .confirm-modal-actions is column-reverse (see style.css) - this
@@ -1060,7 +1060,7 @@
            sequence reads as complete; the app itself does the rest on
            its own first launch (see installer/standalone-entry.js and
            checkPendingWizardReopen's auto-host handoff). -->
-      <button type="button" id="btn-multi-table-open-group-session" class="btn btn-primary" data-i18n="multiTable.openGroupSessionButton">🔗 Open Group Session</button>
+      <button type="button" id="btn-multi-table-open-group-session" class="btn btn-primary" data-i18n="multiTable.openGroupSessionButton">🔗 Open Multi Tables</button>
       <button type="button" id="btn-multi-table-install-step" class="btn btn-ghost hidden" disabled data-i18n="multiTable.installStepLabel">🚀 3. Install &amp; Open the App</button>
       <button type="button" id="btn-multi-table-download-app" class="btn btn-ghost hidden" data-i18n="multiTable.downloadAppButton">⬇️ 2. Download the App</button>
       <button type="button" id="btn-multi-table-download-data" class="btn btn-ghost" data-i18n="multiTable.downloadDataButton">💾 1. Download My Setup</button>
@@ -1981,7 +1981,7 @@
 
   <header class="app-header player-page-header">
     <button type="button" id="btn-group-session-back" class="btn btn-ghost screen-back-btn" aria-label="Back" data-i18n-aria-label="common.back"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h1 data-i18n="groupSession.heading">Group Session</h1>
+    <h1 data-i18n="groupSession.heading">Multi Tables</h1>
   </header>
 
   <p class="player-stats-note" data-i18n="groupSession.intro">Let another phone on this WiFi join and control this live scoreboard.</p>

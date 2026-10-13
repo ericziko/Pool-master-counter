@@ -1,5 +1,5 @@
 // The header's button groups: 4 bordered groups in the asked order, the first three primary,
-// line 1 = start / events / stats, line 2 = Contact Sheet + Help, Theme, Language; renamed buttons;
+// line 1 = start / events / stats, line 2 = Contact Sheet + Set Up Camera + Help, Theme, Language; renamed buttons;
 // no sideways scroll; screenshots at several widths.
 // usage: node tests/probe_header.js http://localhost:4235/ <screenshot dir>
 const puppeteer = require("puppeteer-core");
@@ -24,10 +24,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   });
   console.log(JSON.stringify(info));
   const g = Object.fromEntries(info.groups.map((x) => [x.id, x]));
-  check("group 1: Quick Game, Welcome New Player, Game Setup Wizard (primary), then Set Up Camera", JSON.stringify(g["header-group-start"].items.slice(0, 3)) === JSON.stringify(["⚡ Quick Game", "👋 Welcome New Player", "🧙 Game Setup Wizard"]) && g["header-group-start"].primary.slice(0, 3).every(Boolean), g["header-group-start"]);
+  check("group 1: Quick Game, Welcome New Player, Game Setup Wizard, all primary", JSON.stringify(g["header-group-start"].items) === JSON.stringify(["⚡ Quick Game", "👋 Welcome New Player", "🧙 Game Setup Wizard"]) && g["header-group-start"].primary.every(Boolean), g["header-group-start"]);
   check("group 2: Tournament, League, Multi Tables", JSON.stringify(g["header-group-events"].items) === JSON.stringify(["🏆 Tournament", "🏆 League", "🎯 Multi Tables"]), g["header-group-events"].items);
   check("group 3: Leaderboard, Global Stats", JSON.stringify(g["header-group-stats"].items) === JSON.stringify(["🏆 Leaderboard", "🌐 Global Stats"]), g["header-group-stats"].items);
-  check("group 4: Contact Sheet, Help", JSON.stringify(g["header-group-people"].items) === JSON.stringify(["📇 Contact Sheet", "❓ Help"]), g["header-group-people"].items);
+  check("group 4: Contact Sheet, Set Up Camera, Help", JSON.stringify(g["header-group-people"].items) === JSON.stringify(["📇 Contact Sheet", "📷 Set Up Camera", "❓ Help"]), g["header-group-people"].items);
   check("all four bordered", info.groups.every((x) => x.border === "solid"));
   check("line 2: Contact Sheet + Help, then Theme, then Language", JSON.stringify(info.lines[1]) === JSON.stringify(["header-group-people", "theme-select-row", "language-select-row"]), info.lines[1]);
   for (const w of [1280, 1024, 768, 390]) {
@@ -47,6 +47,18 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await sleep(200);
   const guest = await page.evaluate(() => [...document.querySelectorAll(".header-nav-group")].map((g) => g.id + ":" + (g.offsetParent !== null) + ":" + [...g.children].filter((b) => b.offsetParent !== null).length));
   check("guest mode: no empty bordered box", guest.every((s) => { const [, shown, n] = s.split(":"); return shown === "false" || +n > 0; }), guest);
+  // Multi Tables opens a page titled Multi Tables (French too)
+  await page.evaluate(() => document.body.classList.remove("network-guest-mode"));
+  for (const [lang, title] of [["english", "Multi Tables"], ["french", "Multi-tables"]]) {
+    await page.evaluate((lang) => localStorage.setItem("poolMasterCounter.language.v1", lang), lang);
+    await page.goto(BASE, { waitUntil: "networkidle2" });
+    await sleep(800);
+    await page.evaluate(() => document.getElementById("btn-open-group-session").click());
+    await sleep(600);
+    const h = await page.evaluate(() => { const el = [...document.querySelectorAll('[data-i18n="groupSession.heading"]')].find((e) => e.offsetParent !== null); return el ? el.textContent.trim() : null; });
+    check(lang + ": the Multi Tables page is titled " + title, h === title, h);
+  }
+  await page.evaluate(() => localStorage.removeItem("poolMasterCounter.language.v1"));
   check("no page errors", errors.length === 0, errors);
   console.log(fails ? "HEADER_FAIL (" + fails + ")" : "HEADER_OK");
   await browser.close();

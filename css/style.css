@@ -7602,9 +7602,9 @@ body.network-guest-mode #header-group-start {
 /* ---------- Header nav row ---------- */
 
 /* The header's buttons in bordered groups - start a game (Quick Game,
-   Welcome New Player, Game Setup Wizard, camera), events (Tournament,
-   League, Multi Tables), stats (Leaderboard, Global Stats) on one line;
-   Contact Sheet and Help, then Theme and Language, on the line below -
+   Welcome New Player, Game Setup Wizard), events (Tournament, League,
+   Multi Tables), stats (Leaderboard, Global Stats) on one line; Contact
+   Sheet, Set Up Camera and Help, then Theme and Language, on the line below -
    each line wrapping onto more only when the screen is too narrow. */
 .header-nav-row {
   display: flex;
