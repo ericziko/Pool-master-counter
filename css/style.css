@@ -7654,6 +7654,21 @@ body.network-guest-mode #header-group-start {
   max-width: 100%;
 }
 
+/* Every box the same height - the groups and Theme / Language alike (the
+   Quick Game group's, the tallest) - their contents centred inside. */
+.header-nav-group,
+.header-nav-row .theme-select-row,
+.header-nav-row .language-select-row {
+  min-height: 54px;
+  box-sizing: border-box;
+}
+
+.header-nav-row .theme-select-row select,
+.header-nav-row .language-select-row select {
+  min-height: 0;
+  height: 36px;
+}
+
 /* (a group whose buttons are all hidden - e.g. on a guest's device - goes too) */
 .header-nav-group:not(:has(> .btn:not(.hidden))) {
   display: none;
